@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 
+import com.kyc.incentives.AppUser;
 import com.kyc.incentives.IncentiveUserTriggerHistory;
 import com.kyc.incentives.appcore.contracts.IncentiveCalculator;
 import com.kyc.incentives.enums.UserTriggerHistoryStatus;
@@ -16,7 +17,7 @@ import com.kyc.incentives.enums.UserTriggerHistoryStatus;
  *
  */
 public class CleanRecord implements IncentiveCalculator {
-
+	
 	@Override
 	public Collection<IncentiveUserTriggerHistory> calculateIncentives(Collection<IncentiveUserTriggerHistory> histories) {
 		
@@ -38,11 +39,12 @@ public class CleanRecord implements IncentiveCalculator {
 				BigDecimal amount = new BigDecimal(totalAmount);
 				
 				incentiveUserTriggerHistory.setAmount(amount); 
+				incentiveUserTriggerHistory.setUnitCount(count);
+				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.SUCCESS);
 				
 			} catch (Exception e) {
 				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.FAILED);
 			}
-			
 		}
 		
 		CleanRecordService.getInstance().updateBulk(histories);
@@ -55,6 +57,20 @@ public class CleanRecord implements IncentiveCalculator {
 	 * @return
 	 */
 	private long getCount(IncentiveUserTriggerHistory incentiveUserTriggerHistory) {
-		return 0;
+		
+		Date startDate = incentiveUserTriggerHistory.getStartDate();
+		Date endDate = incentiveUserTriggerHistory.getEndDate();
+		
+		AppUser user = incentiveUserTriggerHistory.getUser();
+		
+		String email = user.getEmail();
+		
+		Long cleanRecordCount = CleanRecordService.getInstance().getCleanRecordCount(email, startDate, endDate);
+		
+		if(cleanRecordCount == null){
+			return 0;
+		}
+		
+		return cleanRecordCount;
 	}
 }

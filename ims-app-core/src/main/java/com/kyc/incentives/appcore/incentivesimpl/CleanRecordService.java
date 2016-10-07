@@ -13,10 +13,12 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
+
 import com.kyc.incentives.appcore.service.ImsService;
 import com.sf.biocapture.entity.BasicData;
 import com.sf.biocapture.entity.SmsActivationRequest;
 import com.sf.biocapture.entity.enums.StatusType;
+import com.sf.biocapture.entity.security.KMUser;
 import com.sf.biocapture.entity.validation.ValidationResult;
 import com.sf.biocapture.entity.validation.ValidationResult_;
 
@@ -48,11 +50,11 @@ public class CleanRecordService extends ImsService{
 	}
 
 	/**
-	 * @param email
+	 * @param dealerEmail
 	 * @param startDate
 	 * @param endDate
 	 */
-	public Long getCleanRecordCount(String email, Date startDate, Date endDate) {
+	public Long getCleanRecordCount(String dealerEmail, Date startDate, Date endDate) {
 		
 		EntityManager entityManager = getKycEntityManager();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -64,7 +66,7 @@ public class CleanRecordService extends ImsService{
 		
 		Predicate nameCondition = criteriaBuilder.equal(root.get(ValidationResult_.approvalStatus), StatusType.PASSED); 
 		Predicate basicDataCondition = root.get(ValidationResult_.recordId)
-				.in(getValidBasicDataIdsSubQuery(criteriaBuilder, criteriaQuery, email, startDate, endDate));
+				.in(getValidBasicDataIdsSubQuery(criteriaBuilder, criteriaQuery, dealerEmail, startDate, endDate));
 		
 		criteriaQuery.where(nameCondition, basicDataCondition);
 		
@@ -72,22 +74,46 @@ public class CleanRecordService extends ImsService{
 		
 	}
 	
-	public Subquery<Long> getValidBasicDataIdsSubQuery(CriteriaBuilder criteriaBuilder, CriteriaQuery<?> query, String email, Date startDate, Date endDate){
+	/**
+	 * 
+	 * This returns a subquery for the valid basic data ids for this dealer email and time range 
+	 * 
+	 * @param criteriaBuilder
+	 * @param query
+	 * @param dealerEmail
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	public Subquery<Long> getValidBasicDataIdsSubQuery(CriteriaBuilder criteriaBuilder, CriteriaQuery<?> query, String dealerEmail, Date startDate, Date endDate){
 		
 		Subquery<Long> basicDataSubQuery = query.subquery(Long.class);
 		Root<BasicData> root = basicDataSubQuery.from(BasicData.class);
 		
+//		time range of capture subquery
 		Subquery<String> subquerySar = basicDataSubQuery.subquery(String.class);
 		Root<SmsActivationRequest> subRootSar = subquerySar.from(SmsActivationRequest.class);
 		
-		Predicate targetRegPeriodCondition = criteriaBuilder.between(subRootSar.get("registrationTimestamp"), startDate, endDate);
+		Predicate targetRegPeriodCondition = criteriaBuilder.between(subRootSar.get("receiptTimestamp"), startDate, endDate);
 
 		subquerySar.select(subRootSar.get("uniqueId"));
 		subquerySar.where(targetRegPeriodCondition);
 		
-		Predicate emailCondition = criteriaBuilder.equal(criteriaBuilder.lower(root.get("biometricCaptureAgent")), email.toLowerCase());
+//		dealer's agents email addresses subquery
+		Subquery<String> subqueryKmuser = basicDataSubQuery.subquery(String.class);
+		Root<KMUser> subRootKmuser = subqueryKmuser.from(KMUser.class);
+		
+		subqueryKmuser.select(criteriaBuilder.lower(subRootKmuser.get("emailAddress")));
+		
+		Predicate dealerEmailAddressesCondition = criteriaBuilder.equal(
+				criteriaBuilder.lower(subRootKmuser.get("assignedDealer").get("emailAddress")), 
+				dealerEmail.toLowerCase());
+		
+		subqueryKmuser.where(dealerEmailAddressesCondition);
+		
 		
 		In<?> uniqueIdCondition = criteriaBuilder.in(root.get("userId").get("uniqueId")).value(subquerySar);
+		In<?> emailCondition = criteriaBuilder.in(criteriaBuilder.lower(root.get("biometricCaptureAgent"))).value(subqueryKmuser);
 		
 		basicDataSubQuery.select(root.get("id"));
 		basicDataSubQuery.where(emailCondition, uniqueIdCondition);

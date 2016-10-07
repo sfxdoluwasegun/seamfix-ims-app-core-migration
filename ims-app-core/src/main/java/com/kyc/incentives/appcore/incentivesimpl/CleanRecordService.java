@@ -54,7 +54,7 @@ public class CleanRecordService extends ImsService{
 	 * @param startDate
 	 * @param endDate
 	 */
-	public Long getCleanRecordCount(String dealerEmail, Date startDate, Date endDate) {
+	public Long getCleanRecordCount(String dealerEmail, Date startDate, Date endDate, List<StatusType> targetStatusTypes) {
 		
 		EntityManager entityManager = getKycEntityManager();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -64,11 +64,17 @@ public class CleanRecordService extends ImsService{
 		
 		criteriaQuery.select(criteriaBuilder.count(root.get("pk")));
 		
-		Predicate nameCondition = criteriaBuilder.equal(root.get(ValidationResult_.approvalStatus), StatusType.PASSED); 
+		Predicate statusCondition;
+		
+		if(targetStatusTypes != null && !targetStatusTypes.isEmpty()){
+			statusCondition = root.get(ValidationResult_.approvalStatus).in(targetStatusTypes);
+		} else {
+			statusCondition = criteriaBuilder.isNull(root.get(ValidationResult_.approvalStatus));
+		}
 		Predicate basicDataCondition = root.get(ValidationResult_.recordId)
 				.in(getValidBasicDataIdsSubQuery(criteriaBuilder, criteriaQuery, dealerEmail, startDate, endDate));
 		
-		criteriaQuery.where(nameCondition, basicDataCondition);
+		criteriaQuery.where(statusCondition, basicDataCondition);
 		
 		return getSingleResult(entityManager, criteriaQuery);
 		

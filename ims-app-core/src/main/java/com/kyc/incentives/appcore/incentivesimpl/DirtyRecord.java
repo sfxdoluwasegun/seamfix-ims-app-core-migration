@@ -15,15 +15,13 @@ import com.sf.biocapture.entity.enums.StatusType;
  * @author dawuzi
  *
  */
-public class CleanRecord implements IncentiveCalculator {
-	
-	private final List<StatusType> targetStatusTypes = Arrays.asList( new StatusType[]{ StatusType.PASSED } );
-	
+public class DirtyRecord implements IncentiveCalculator {
+
+	private final List<StatusType> targetStatusTypes = Arrays.asList( new StatusType[]{ StatusType.FAILED } );
 	@Override
 	public Collection<IncentiveUserTriggerHistory> calculateIncentives(Collection<IncentiveUserTriggerHistory> histories) {
 		CleanRecordUtil.handleTriggerHistories(histories, targetStatusTypes);
 		CleanRecordService.getInstance().updateBulk(histories);
 		return histories;
 	}
-
 }

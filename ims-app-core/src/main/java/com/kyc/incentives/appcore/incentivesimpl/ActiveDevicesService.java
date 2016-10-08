@@ -14,11 +14,8 @@ import javax.persistence.criteria.Subquery;
 
 import com.kyc.incentives.appcore.service.ImsService;
 import com.sf.biocapture.entity.EnrollmentRef;
-import com.sf.biocapture.entity.Node;
 import com.sf.biocapture.entity.NodeAssignment;
 import com.sf.biocapture.entity.SmsActivationRequest;
-import com.sf.biocapture.entity.validation.ValidationResult;
-import com.sf.biocapture.entity.validation.ValidationResult_;
 
 /**
  * @author dawuzi

@@ -13,6 +13,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
@@ -531,5 +532,37 @@ public class ImsService {
 		
 		return admin;
 	}
+	
+	public <T extends BaseModel> List<T> getByIds(Class<T> clazz, Collection<?> ids){
+		
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
+		Root<T> root = criteriaQuery.from(clazz);
+		
+		Predicate idsCondition = root.get(BaseModel_.id).in(ids);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(idsCondition); 
+		
+		return getResultList(entityManager, criteriaQuery);
+	}
+
+    public <T extends BaseModel> List<T> findAllActive(Class<T> clazz) {
+    	
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
+		Root<T> root = criteriaQuery.from(clazz);
+		
+		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), Boolean.TRUE);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(activeCondition);
+		
+		return getResultList(entityManager, criteriaQuery);
+    }
 	
 }

@@ -26,6 +26,7 @@ import com.kyc.incentives.AppUser;
 import com.kyc.incentives.AppUser_;
 import com.kyc.incentives.BaseModel;
 import com.kyc.incentives.BaseModel_;
+import com.kyc.incentives.IncentiveUserTriggerHistory_;
 import com.kyc.incentives.Setting;
 import com.kyc.incentives.Setting_;
 import com.kyc.incentives.enums.SettingValues;
@@ -564,5 +565,22 @@ public class ImsService {
 		
 		return getResultList(entityManager, criteriaQuery);
     }
+    
+    public <T extends BaseModel> Long countAllActive(Class<T> clazz) {
+    	
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
+		Root<T> root = criteriaQuery.from(clazz);
+		
+		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), Boolean.TRUE);
+		
+		criteriaQuery.select(criteriaBuilder.count(root.get(BaseModel_.id)));
+		criteriaQuery.where(activeCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
+    }
+	
 	
 }

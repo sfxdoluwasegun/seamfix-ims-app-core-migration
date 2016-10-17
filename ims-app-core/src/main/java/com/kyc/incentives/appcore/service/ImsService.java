@@ -26,7 +26,6 @@ import com.kyc.incentives.AppUser;
 import com.kyc.incentives.AppUser_;
 import com.kyc.incentives.BaseModel;
 import com.kyc.incentives.BaseModel_;
-import com.kyc.incentives.IncentiveUserTriggerHistory_;
 import com.kyc.incentives.Setting;
 import com.kyc.incentives.Setting_;
 import com.kyc.incentives.enums.SettingValues;
@@ -270,6 +269,10 @@ public class ImsService {
 	}
 
 	public <T> Collection<T> createBulk(Collection<T> entities){
+		
+		if(entities.isEmpty()){
+			return entities;
+		}
 
 		EntityManager entityManager = getEntityManager();
 		entityManager.getTransaction().begin();
@@ -314,6 +317,10 @@ public class ImsService {
 
 	public <T> Collection<T> updateBulk(Collection<T> entities){
 
+		if(entities.isEmpty()){
+			return entities;
+		}
+		
 		EntityManager entityManager = getEntityManager();
 		entityManager.getTransaction().begin();
 		
@@ -356,6 +363,10 @@ public class ImsService {
 	
 	public <T> void deleteBulk(Collection<T> entity){
 		
+		if(entity.isEmpty()){
+			return;
+		}
+		
 		EntityManager entityManager = getEntityManager();
 		entityManager.getTransaction().begin();
 
@@ -393,6 +404,62 @@ public class ImsService {
 			closeEntityManager(entityManager);
 		}
 	}
+	
+	public <T extends BaseModel> T createOrUpdate(T entity){
+
+		EntityManager entityManager = getEntityManager();
+		entityManager.getTransaction().begin();
+		
+		try {
+			
+			if(entity.getId() == null){ //create
+				entityManager.persist(entity);
+			} else { //update 
+				entityManager.merge(entity);
+			}
+			
+			entityManager.getTransaction().commit();
+			
+			return entity;
+		} catch (Exception e) {
+			log.error("", e);
+			throw e;
+		} finally {
+			closeEntityManager(entityManager);
+		}
+	}
+
+	public <T extends BaseModel> Collection<T> createOrUpdateBulk(Collection<T>  entities){
+
+		if(entities.isEmpty()){
+			return entities;
+		}
+		
+		EntityManager entityManager = getEntityManager();
+		entityManager.getTransaction().begin();
+		
+		try {
+			
+			for (T entity : entities) {
+				if(entity.getId() == null){ //create
+					entityManager.persist(entity);
+				} else { //update 
+					entityManager.merge(entity);
+				}
+			}
+			
+			entityManager.getTransaction().commit();
+			
+			return entities;
+			
+		} catch (Exception e) {
+			log.error("", e);
+			throw e;
+		} finally {
+			closeEntityManager(entityManager);
+		}
+	}
+
 	
 	public <T extends BaseModel> T findById(Class<T> clazz, Long id) {
 

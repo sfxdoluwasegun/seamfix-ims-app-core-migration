@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.JoinColumn;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
@@ -73,6 +74,14 @@ public class ImsService {
 		}
 	}
 	
+	protected void rollBackTransaction(EntityManager entityManager){
+		EntityTransaction transaction = entityManager.getTransaction();
+		
+		if(transaction != null && transaction.isActive()){
+			transaction.rollback();
+		}
+	}
+	
 	/**
 	 * Fetch persisted entity instance by it {@link PrimaryKey}.
 	 * 
@@ -91,15 +100,8 @@ public class ImsService {
 		criteriaQuery.select(root);
 		criteriaQuery.where(criteriaBuilder.and(criteriaBuilder.equal(root.get("id"), pk)));
 
-		try {
-			return entityManager.createQuery(criteriaQuery).getSingleResult();
-		} catch (Exception e) {
-			log.error("No " + clazz.getCanonicalName() + " exists with the pk:" + pk);
-		} finally {
-			closeEntityManager(entityManager);
-		}
-
-		return null;
+		return getSingleResult(entityManager, criteriaQuery);
+		
 	}
 
 	/**
@@ -118,15 +120,8 @@ public class ImsService {
 
 		criteriaQuery.select(root);
 
-		try {
-			return entityManager.createQuery(criteriaQuery).getResultList();
-		} catch (Exception e) {
-			log.error("No " + clazz.getCanonicalName() + " exists ", e);
-		} finally {
-			closeEntityManager(entityManager);
-		}
-
-		return null;
+		return getResultList(entityManager, criteriaQuery);
+		
 	}
 
 	/**
@@ -148,15 +143,8 @@ public class ImsService {
 		criteriaQuery.select(root);
 		criteriaQuery.orderBy(criteriaBuilder.asc(root.get(property)));
 
-		try {
-			return entityManager.createQuery(criteriaQuery).getResultList();
-		} catch (Exception e) {
-			log.error("No " + clazz.getCanonicalName() + " exists or the property:" + property + " is invalid");
-		} finally {
-			closeEntityManager(entityManager);
-		}
-
-		return null;
+		return getResultList(entityManager, criteriaQuery);
+		
 	}
 
 	/**
@@ -181,15 +169,8 @@ public class ImsService {
 		criteriaQuery.select(root);
 		criteriaQuery.where(criteriaBuilder.and(criteriaBuilder.equal(root.get("id"), pk)));
 
-		try {
-			return entityManager.createQuery(criteriaQuery).getSingleResult();
-		} catch (Exception e) {
-			log.error("No " + clazz.getCanonicalName() + " exists with the pk:" + pk + " or property arguments don't exist for entity");
-		} finally {
-			closeEntityManager(entityManager);
-		}
-
-		return null;
+		return getSingleResult(entityManager, criteriaQuery);
+		
 	}
 
 	/**
@@ -213,15 +194,8 @@ public class ImsService {
 			root.fetch(property, JoinType.LEFT);
 		}
 
-		try {
-			return entityManager.createQuery(criteriaQuery).getResultList();
-		} catch (Exception e) {
-			log.error("No " + clazz.getCanonicalName() + " exists or one of the specified properties is invalid");
-		} finally {
-			closeEntityManager(entityManager);
-		}
-
-		return null;
+		return getResultList(entityManager, criteriaQuery);
+		
 	}
 
 	/**
@@ -240,6 +214,7 @@ public class ImsService {
 			entityManager.getTransaction().commit();
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 		} finally {
 			closeEntityManager(entityManager);
 		}
@@ -262,6 +237,7 @@ public class ImsService {
 			return entity;
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -285,6 +261,7 @@ public class ImsService {
 			return entities;
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -309,6 +286,7 @@ public class ImsService {
 			return entity;
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -332,6 +310,7 @@ public class ImsService {
 			return entities;
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -354,6 +333,7 @@ public class ImsService {
 			entityManager.getTransaction().commit();
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -377,6 +357,7 @@ public class ImsService {
 			entityManager.getTransaction().commit();
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -399,6 +380,7 @@ public class ImsService {
 			entityManager.getTransaction().commit();
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -423,6 +405,7 @@ public class ImsService {
 			return entity;
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -454,6 +437,7 @@ public class ImsService {
 			
 		} catch (Exception e) {
 			log.error("", e);
+			rollBackTransaction(entityManager);
 			throw e;
 		} finally {
 			closeEntityManager(entityManager);
@@ -515,12 +499,22 @@ public class ImsService {
 	protected <T> T getSingleResult(EntityManager em, CriteriaQuery<T> criteriaQuery) {
 		Class<T> resultClazz = criteriaQuery.getResultType();
 		try {
-			return em.createQuery(criteriaQuery).getSingleResult();
+			
+			em.getTransaction().begin();
+			
+			T singleResult = em.createQuery(criteriaQuery).getSingleResult();
+			
+			em.getTransaction().commit();
+			
+			return singleResult;
+			
         } catch (NoResultException ex) {
 //        	I don't understand why this warrants an exception in the JPA standard so lets just catch it quietly, return null and move on.
+			rollBackTransaction(em);
         	return null;
 		} catch (Exception e) {
 			log.error("error retrieving record of " + resultClazz.getCanonicalName() , e);
+			rollBackTransaction(em);
 			throw e;
 		} finally {
 			closeEntityManager(em);
@@ -536,9 +530,13 @@ public class ImsService {
 	protected <T> List<T> getResultList(EntityManager em, CriteriaQuery<T> criteriaQuery) {
 		Class<T> resultClazz = criteriaQuery.getResultType();
 		try {
-			return em.createQuery(criteriaQuery).getResultList();
+			em.getTransaction().begin();
+			List<T> resultList = em.createQuery(criteriaQuery).getResultList(); 
+			em.getTransaction().commit();
+			return resultList;
 		} catch (Exception e) {
 			log.error("error retrieving record of " + resultClazz.getCanonicalName() , e);
+			rollBackTransaction(em);
 			throw e;
 		} finally {
 			closeEntityManager(em);

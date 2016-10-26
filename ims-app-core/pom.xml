@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.kyc.incentives.appcore</groupId>
-	<artifactId>incentives-appcore</artifactId>
+	<groupId>com.seamfix.incentives</groupId>
+	<artifactId>ims-appcore</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Incentive App Core</name>
-	<description>This module contains utililty classes for the Incentive management project</description>
+	<description>This module contains utility classes for the Incentive management project</description>
 
 	<build>
 		<plugins>
@@ -23,8 +23,8 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.kyc</groupId>
-			<artifactId>incentives-jpa</artifactId>
+			<groupId>com.seamfix.incentives</groupId>
+			<artifactId>ims-model</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>

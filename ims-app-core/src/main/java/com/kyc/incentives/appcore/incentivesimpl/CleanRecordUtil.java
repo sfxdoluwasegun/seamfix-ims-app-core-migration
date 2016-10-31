@@ -15,7 +15,7 @@ import com.sf.biocapture.entity.enums.StatusType;
 
 /**
  * @author dawuzi
- *
+ * @deprecated
  */
 public class CleanRecordUtil {
 

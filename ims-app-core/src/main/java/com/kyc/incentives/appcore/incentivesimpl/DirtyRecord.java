@@ -4,24 +4,42 @@
 package com.kyc.incentives.appcore.incentivesimpl;
 
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
+import com.kyc.incentives.AppUser;
 import com.kyc.incentives.IncentiveUserTriggerHistory;
-import com.kyc.incentives.appcore.contracts.IncentiveCalculator;
 import com.sf.biocapture.entity.enums.StatusType;
 
 /**
  * @author dawuzi
  *
  */
-public class DirtyRecord implements IncentiveCalculator {
-
+public class DirtyRecord extends AbstractIncentiveCalculator {
+	
 	private final List<StatusType> targetStatusTypes = Arrays.asList( new StatusType[]{ StatusType.FAILED } );
-	@Override
-	public Collection<IncentiveUserTriggerHistory> calculateIncentives(Collection<IncentiveUserTriggerHistory> histories) {
-		CleanRecordUtil.handleTriggerHistories(histories, targetStatusTypes);
-		CleanRecordService.getInstance().updateBulk(histories);
-		return histories;
+
+	public DirtyRecord() {
+		super(CleanRecordService.getInstance());
 	}
+
+	@Override
+	protected long getCount(IncentiveUserTriggerHistory incentiveUserTriggerHistory) {
+		Date startDate = incentiveUserTriggerHistory.getStartDate();
+		Date endDate = incentiveUserTriggerHistory.getEndDate();
+		
+		AppUser user = incentiveUserTriggerHistory.getUser();
+		
+		String email = user.getEmail();
+		
+		Long cleanRecordCount = CleanRecordService.getInstance().getCleanRecordCount(email, startDate, endDate, targetStatusTypes);
+		
+		if(cleanRecordCount == null){
+			return 0;
+		}
+		
+		return cleanRecordCount;
+	}
+	
+	
 }

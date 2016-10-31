@@ -52,6 +52,10 @@ public class KitActivityService extends ImsService {
 	 */
 	public Long getActiveKitCount(String email, Date startDate, Date endDate) {
 		
+		if(email == null || email.trim().isEmpty()){
+			return 0L;
+		}
+		
 		EntityManager entityManager = getKycEntityManager();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
 		
@@ -73,7 +77,7 @@ public class KitActivityService extends ImsService {
 				getSqlTimeStamp(startDate), getSqlTimeStamp(endDate));
 		
 		
-		criteriaQuery.select(criteriaBuilder.count(root.get("id")));
+		criteriaQuery.select(criteriaBuilder.countDistinct(root.get("macAddress")));
 		criteriaQuery.where(heartBeartTimeRangeCondition, macAddressCondition);
 		
 		return getSingleResult(entityManager, criteriaQuery);

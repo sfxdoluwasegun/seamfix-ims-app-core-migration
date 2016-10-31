@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.kyc.incentives.IncentiveUserTriggerHistory;
 import com.kyc.incentives.appcore.contracts.IncentiveCalculator;
 import com.kyc.incentives.appcore.service.ImsService;
@@ -16,9 +19,11 @@ import com.kyc.incentives.enums.UserTriggerHistoryStatus;
  * @author dawuzi
  *
  */
-public abstract class AbstractIncentiveCalculator implements IncentiveCalculator{
+public abstract class AbstractIncentiveCalculator implements IncentiveCalculator {
 
 	private ImsService imsService;
+	protected Logger log = LoggerFactory.getLogger(getClass()); 
+	private Logger localLog = LoggerFactory.getLogger(getClass()); 
 	
 	public AbstractIncentiveCalculator(ImsService imsService) {
 		this.imsService = imsService;
@@ -49,6 +54,7 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 				
 			} catch (Exception e) {
 				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.FAILED);
+				localLog.error(null, e);
 			}
 		}
 		

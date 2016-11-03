@@ -6,21 +6,31 @@ package com.kyc.incentives.appcore.incentivesimpl;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 
-import com.kyc.incentives.AppUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.kyc.incentives.IncentiveUserTriggerHistory;
+import com.kyc.incentives.appcore.contracts.IncentiveCalculator;
+import com.kyc.incentives.appcore.service.ImsService;
 import com.kyc.incentives.enums.UserTriggerHistoryStatus;
-import com.sf.biocapture.entity.enums.StatusType;
 
 /**
  * @author dawuzi
- * @deprecated
+ *
  */
-public class CleanRecordUtil {
+public abstract class AbstractIncentiveCalculator implements IncentiveCalculator {
 
-	public static void handleTriggerHistories(Collection<IncentiveUserTriggerHistory> histories, List<StatusType> targetStatusTypes){
-		
+	private ImsService imsService;
+	protected Logger log = LoggerFactory.getLogger(getClass()); 
+	private Logger localLog = LoggerFactory.getLogger(getClass()); 
+	
+	public AbstractIncentiveCalculator(ImsService imsService) {
+		this.imsService = imsService;
+	}
+
+	@Override
+	public Collection<IncentiveUserTriggerHistory> calculateIncentives(Collection<IncentiveUserTriggerHistory> histories) {
 		Date triggerStartTime = new Date();
 		
 		for (IncentiveUserTriggerHistory incentiveUserTriggerHistory : histories) {
@@ -32,7 +42,7 @@ public class CleanRecordUtil {
 				
 				double unitAmount = incentiveUserTriggerHistory.getUnitAmount();
 				
-				long count = getCount(incentiveUserTriggerHistory, targetStatusTypes);
+				long count = getCount(incentiveUserTriggerHistory);
 				
 				double totalAmount = count * unitAmount;
 				
@@ -44,31 +54,19 @@ public class CleanRecordUtil {
 				
 			} catch (Exception e) {
 				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.FAILED);
+				localLog.error(null, e);
 			}
 		}
 		
+		imsService.updateBulk(histories);
 		
+		return histories;
 	}
 
 	/**
 	 * @param incentiveUserTriggerHistory
 	 * @return
 	 */
-	private static long getCount(IncentiveUserTriggerHistory incentiveUserTriggerHistory, List<StatusType> targetStatusTypes) {
-		Date startDate = incentiveUserTriggerHistory.getStartDate();
-		Date endDate = incentiveUserTriggerHistory.getEndDate();
-		
-		AppUser user = incentiveUserTriggerHistory.getUser();
-		
-		String email = user.getEmail();
-		
-		Long cleanRecordCount = CleanRecordService.getInstance().getCleanRecordCount(email, startDate, endDate, targetStatusTypes);
-		
-		if(cleanRecordCount == null){
-			return 0;
-		}
-		
-		return cleanRecordCount;
-	}
-	
+	protected abstract long getCount(IncentiveUserTriggerHistory incentiveUserTriggerHistory);
+
 }

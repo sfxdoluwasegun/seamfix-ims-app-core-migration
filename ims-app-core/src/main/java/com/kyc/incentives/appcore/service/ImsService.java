@@ -616,6 +616,14 @@ public class ImsService {
 	}
 
     public <T extends BaseModel> List<T> findAllActive(Class<T> clazz) {
+    	return findAll(clazz, true);
+    }
+    
+    public <T extends BaseModel> Long countAllActive(Class<T> clazz) {
+    	return countAll(clazz, true);
+    }
+	
+    public <T extends BaseModel> List<T> findAll(Class<T> clazz, boolean active) {
     	
 		EntityManager entityManager = getEntityManager();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -623,7 +631,7 @@ public class ImsService {
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
 		
-		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), Boolean.TRUE);
+		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), active);
 		
 		criteriaQuery.select(root);
 		criteriaQuery.where(activeCondition);
@@ -631,7 +639,7 @@ public class ImsService {
 		return getResultList(entityManager, criteriaQuery);
     }
     
-    public <T extends BaseModel> Long countAllActive(Class<T> clazz) {
+    public <T extends BaseModel> Long countAll(Class<T> clazz, boolean active) {
     	
 		EntityManager entityManager = getEntityManager();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -639,13 +647,11 @@ public class ImsService {
 		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
 		Root<T> root = criteriaQuery.from(clazz);
 		
-		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), Boolean.TRUE);
+		Predicate activeCondition = criteriaBuilder.equal(root.get("active"), active);
 		
 		criteriaQuery.select(criteriaBuilder.count(root.get(BaseModel_.id)));
 		criteriaQuery.where(activeCondition);
 		
 		return getSingleResult(entityManager, criteriaQuery);
     }
-	
-	
 }

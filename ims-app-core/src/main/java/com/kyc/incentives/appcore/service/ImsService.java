@@ -654,4 +654,17 @@ public class ImsService {
 		
 		return getSingleResult(entityManager, criteriaQuery);
     }
+    
+    public AppUser getUserByName(String name){
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<AppUser> criteriaQuery = criteriaBuilder.createQuery(AppUser.class);
+		Root<AppUser> root = criteriaQuery.from(AppUser.class);
+
+		criteriaQuery.select(root);
+		criteriaQuery.where(criteriaBuilder.equal(root.get(AppUser_.name), name));
+		
+		return getSingleResult(entityManager, criteriaQuery);
+    }
 }

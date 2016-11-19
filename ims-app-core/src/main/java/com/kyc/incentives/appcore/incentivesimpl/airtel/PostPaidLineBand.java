@@ -7,11 +7,11 @@ package com.kyc.incentives.appcore.incentivesimpl.airtel;
  * @author dawuzi
  *
  */
-public class Airtel100To200Band extends AbstractAirtelBandIncentive {
+public class PostPaidLineBand extends AbstractAirtelBandIncentive {
 
 	@Override
 	public AirtelRegBand getAirtelBand() {
-		return AirtelRegBand.BAND_100_199;
+		return AirtelRegBand.POSTPAID_LINES;
 	}
 
 }

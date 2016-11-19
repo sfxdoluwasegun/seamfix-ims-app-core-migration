@@ -111,9 +111,11 @@ public class CleanRecordService extends ImsService{
 		
 		subqueryKmuser.select(criteriaBuilder.lower(subRootKmuser.get("emailAddress")));
 		
+		String targetEmail = (dealerEmail != null) ? dealerEmail.toLowerCase() : "";
+		
 		Predicate dealerEmailAddressesCondition = criteriaBuilder.equal(
 				criteriaBuilder.lower(subRootKmuser.get("assignedDealer").get("emailAddress")), 
-				dealerEmail.toLowerCase());
+				targetEmail);
 		
 		subqueryKmuser.where(dealerEmailAddressesCondition);
 		

@@ -12,9 +12,6 @@ import java.util.Set;
 
 import javax.persistence.metamodel.SingularAttribute;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.kyc.incentives.AppUser;
 import com.kyc.incentives.ImsRole;
 import com.kyc.incentives.Incentive;
@@ -33,8 +30,6 @@ import com.kyc.incentives.enums.UserTriggerHistoryStatus;
  */
 public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalculator { 
 
-	private Logger localLog = LoggerFactory.getLogger(AbstractAirtelBandIncentive.class); 
-	
 	public AbstractAirtelBandIncentive() {
 		super(AirtelService.getInstance());
 	}
@@ -107,6 +102,9 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 		case POSTPAID_LINES:
 			bandMetaModelAttribute = AirtelIncentivePayment_.postpaidLines;
 			break;
+		case VARIANCE:
+			bandMetaModelAttribute = AirtelIncentivePayment_.variance;
+			break;
 
 		default:
 			throw new IllegalStateException("Unknow band found");
@@ -118,7 +116,7 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 		
 		IncentiveTriggerHistory incentiveTriggerHistory = context.getIncentiveTriggerHistory();
 		
-		log.info("processing app user : "+name);
+		log.info("processing app user : "+name +", countPojos.size() : "+countPojos.size()+", getAirtelBand() : "+getAirtelBand());
 		
 		for(RegCountPojo countPojo : countPojos){
 			
@@ -135,7 +133,7 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 			history.setStatus(UserTriggerHistoryStatus.PENDING);
 			history.setTriggerEndTime(null);
 			history.setTriggerStartTime(null);
-			history.setUnitAmount(getUnitAmount(countPojo.getVendorType()));
+			history.setUnitAmount(getUnitAmount(countPojo.getVendorType(), countPojo.getCount()));
 			history.setUnitCount(countPojo.getCount());
 			
 			if(dealer){
@@ -152,10 +150,11 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 
 	/**
 	 * @param vendorType
+	 * @param count 
 	 * @return
 	 */
-	private double getUnitAmount(String vendorType) {
-		return AirtelUtil.getUnitAmount(vendorType, getAirtelBand());
+	private double getUnitAmount(String vendorType, Long count) {
+		return AirtelUtil.getUnitAmount(vendorType, getAirtelBand(), count);
 	}
 
 	/**

@@ -12,6 +12,7 @@ public enum AirtelRegBand {
 	BAND_200_499,
 	BAND_500_999,
 	BAND_1000,
-	POSTPAID_LINES
+	POSTPAID_LINES,
+	VARIANCE,
 	;
 }

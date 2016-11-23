@@ -81,9 +81,9 @@ public class ActiveDevicesService extends ImsService {
 		subqueryEnrollmentRef.select(subRootEnrollmentRef.get("macAddress"));
 		subqueryEnrollmentRef.where(enrollmentRefCodeCondition);
 		
+		String targetEmail = (email != null) ? email.toLowerCase() : "" ;
 		
-		
-		Predicate emailCondition = criteriaBuilder.equal(criteriaBuilder.lower(root.get("assignedDealer").get("emailAddress")), email.toLowerCase());
+		Predicate emailCondition = criteriaBuilder.equal(criteriaBuilder.lower(root.get("assignedDealer").get("emailAddress")), targetEmail);
 		Predicate macAddressCondition = root.get("targetNode").get("macAddress").in(subqueryEnrollmentRef);
 		
 		criteriaQuery.where(emailCondition, macAddressCondition);

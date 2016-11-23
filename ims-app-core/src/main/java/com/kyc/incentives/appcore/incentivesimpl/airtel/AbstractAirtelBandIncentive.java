@@ -7,7 +7,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.metamodel.SingularAttribute;
@@ -29,6 +31,8 @@ import com.kyc.incentives.enums.UserTriggerHistoryStatus;
  *
  */
 public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalculator { 
+	
+	private Map<String, AppUser> userNameMap = new HashMap<>();
 
 	public AbstractAirtelBandIncentive() {
 		super(AirtelService.getInstance());
@@ -133,7 +137,7 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 			history.setStatus(UserTriggerHistoryStatus.PENDING);
 			history.setTriggerEndTime(null);
 			history.setTriggerStartTime(null);
-			history.setUnitAmount(getUnitAmount(countPojo.getVendorType(), countPojo.getCount()));
+			history.setUnitAmount(getUnitAmount(countPojo.getVendorType()));
 			history.setUnitCount(countPojo.getCount());
 			
 			if(dealer){
@@ -153,8 +157,8 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 	 * @param count 
 	 * @return
 	 */
-	private double getUnitAmount(String vendorType, Long count) {
-		return AirtelUtil.getUnitAmount(vendorType, getAirtelBand(), count);
+	private double getUnitAmount(String vendorType) {
+		return AirtelUtil.getUnitAmount(vendorType, getAirtelBand());
 	}
 
 	/**
@@ -162,7 +166,15 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 	 * @return
 	 */
 	private AppUser getUser(String name) {
-		return AirtelService.getInstance().getUserByName(name); 
+		
+		AppUser appUser = userNameMap.get(name);
+		
+		if(appUser == null){
+			appUser = AirtelService.getInstance().getUserByName(name); 
+			userNameMap.put(name, appUser);
+		}
+		
+		return appUser; 
 	}
 
 	public static boolean isOverlapping(Date start1, Date end1, Date start2, Date end2) {

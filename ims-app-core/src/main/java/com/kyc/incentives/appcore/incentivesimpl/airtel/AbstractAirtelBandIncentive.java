@@ -139,6 +139,7 @@ public abstract class AbstractAirtelBandIncentive extends AbstractIncentiveCalcu
 			history.setTriggerStartTime(null);
 			history.setUnitAmount(getUnitAmount(countPojo.getVendorType()));
 			history.setUnitCount(countPojo.getCount());
+			history.setRole(countPojo.getVendorType());
 			
 			if(dealer){
 				history.setUser(getUser(countPojo.getAgent()));

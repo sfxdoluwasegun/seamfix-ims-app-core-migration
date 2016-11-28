@@ -65,6 +65,7 @@ public class AirtelService extends ImsService {
 		Root<AirtelIncentivePayment> root = criteriaQuery.from(AirtelIncentivePayment.class);
 		
 		Predicate monthCondition = root.get(AirtelIncentivePayment_.month).in(months);
+		Predicate vendorTypeCondition = criteriaBuilder.notEqual(root.get(AirtelIncentivePayment_.vendorType), "N/A");
 		
 		Predicate nameCondition;
 		
@@ -81,7 +82,7 @@ public class AirtelService extends ImsService {
 				, criteriaBuilder.coalesce(criteriaBuilder.sum(root.get(targetBand)), Long.valueOf(0)) 
 				));		
 		
-		criteriaQuery.where(monthCondition, nameCondition);
+		criteriaQuery.where(monthCondition, nameCondition, vendorTypeCondition);
 		criteriaQuery.groupBy(root.get(AirtelIncentivePayment_.fsa)
 				, root.get(AirtelIncentivePayment_.dealer)
 				, root.get(AirtelIncentivePayment_.vendorType));

@@ -9,11 +9,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.StringJoiner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kyc.incentives.AppUser;
+import com.kyc.incentives.ImsRole;
 import com.kyc.incentives.Incentive;
 import com.kyc.incentives.IncentiveTriggerHistory;
 import com.kyc.incentives.IncentiveUserTriggerHistory;
@@ -92,13 +95,19 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 		List<Incentive> incentives = context.getIncentives();
 		
 		for(Incentive incentive : incentives){
-			
-			if(!Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles())){
+			if(createHistory(incentive, appUser)){
 				addHistory(incentive, appUser, context, histories);
 			}
-			
 		}
-		
+	}
+
+	/**
+	 * @param incentive
+	 * @param appUser
+	 * @return
+	 */
+	protected boolean createHistory(Incentive incentive, AppUser appUser) {
+		return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
 	}
 
 	/**
@@ -131,9 +140,31 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 		history.setUnitAmount(incentive.getAmount());
 		history.setUnitCount(0);
 		history.setUser(appUser);
+		history.setRole(getRole(appUser));
 		
 		histories.add(history);
 		
+	}
+
+	protected String getRole(AppUser appUser) {
+		
+		Set<ImsRole> roles = appUser.getRoles();
+		
+		if(roles == null || roles.isEmpty()){
+			return null;
+		}
+		
+		if(roles.size() == 1){
+			return roles.iterator().next().getName();
+		}
+		
+		StringJoiner joiner = new StringJoiner(" | ");
+		
+		for(ImsRole role : roles){
+			joiner.add(role.getName());
+		}
+		
+		return joiner.toString();
 	}
 
 	@Override

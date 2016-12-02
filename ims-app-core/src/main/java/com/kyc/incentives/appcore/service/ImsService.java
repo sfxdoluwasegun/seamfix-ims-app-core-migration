@@ -489,6 +489,51 @@ public class ImsService {
 		
 		return getSingleResult(entityManager, criteriaQuery);
     }
+    
+    public Setting getImsSettingByName(String settingName) { 
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<Setting> criteriaQuery = criteriaBuilder.createQuery(Setting.class);
+		Root<Setting> root = criteriaQuery.from(Setting.class);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(criteriaBuilder.equal(root.get(Setting_.name), settingName));
+		
+		return getSingleResult(entityManager, criteriaQuery);
+	}
+
+	public Setting createImsSetting(String name, String value, String description){
+		
+		Setting setting = getImsSettingByName(name);
+		if(setting != null)
+			return setting;
+		
+		setting = new Setting();
+		setting.setName(name);
+		setting.setValue(value);
+		setting.setDescription(description);
+		
+		setting = (Setting) create(setting);
+		
+		return setting;
+	}
+	
+	public Setting createImsSetting(SettingValues settingValues){
+		
+		Setting setting = getSetting(settingValues);
+		if(setting != null)
+			return setting;
+		
+		setting = new Setting();
+		setting.setName(settingValues.name());
+		setting.setValue(settingValues.getDefaultValue());
+		setting.setDescription(settingValues.getDefaultDescription());
+		
+		setting = (Setting) create(setting);
+		
+		return setting;
+	}
 
 	/**
 	 * @param entityManager

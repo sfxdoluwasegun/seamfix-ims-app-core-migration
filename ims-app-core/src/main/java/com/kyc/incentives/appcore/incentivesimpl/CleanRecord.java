@@ -33,6 +33,7 @@ import com.sf.biocapture.entity.security.KMUser;
 public class CleanRecord extends AbstractIncentiveCalculator {
 	
 	private CleanRecordService service = CleanRecordService.getInstance();
+	private SharedService sharedService = SharedService.getInstance();
 	
 	private Map<String, AppUser> emailUserCache = new HashMap<>();
 	private Map<String, KycDealer> agentDealerEmailCache = new HashMap<>();
@@ -70,7 +71,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 			
 			AppUser uplineUser = getAppUserbyKycDealer(dealer);
 			
-			Long cleanRecordCount = service.getCleanRecordAgentCount(email, startDate, endDate, targetStatusTypes);
+			Long cleanRecordCount = service.getCleanRecordAgentCount(email, startDate, endDate, getTargetStatusTypes());
 			
 			if(cleanRecordCount == null){
 				cleanRecordCount = 0L;
@@ -93,7 +94,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 				
 				String agentEmail = agent.getEmailAddress();
 				
-				Long cleanRecordCount = service.getCleanRecordAgentCount(agentEmail, startDate, endDate, targetStatusTypes);
+				Long cleanRecordCount = service.getCleanRecordAgentCount(agentEmail, startDate, endDate, getTargetStatusTypes());
 				
 				if(cleanRecordCount == null){
 					cleanRecordCount = 0L;
@@ -107,6 +108,10 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 				histories.add(history);
 			}
 		}
+	}
+	
+	protected List<StatusType> getTargetStatusTypes(){
+		return targetStatusTypes;
 	}
 
 	/**
@@ -161,9 +166,9 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 			String code = "DEALER_TYPE";
 			
 			if(dealerType.getCode() == null){
-				imsRole = service.getRoleByName(dealerType.getName());
+				imsRole = sharedService.getRoleByName(dealerType.getName());
 			} else {
-				imsRole = service.getRoleByNameAndCode(dealerType.getName(), code);
+				imsRole = sharedService.getRoleByNameAndCode(dealerType.getName(), code);
 			}
 			
 			if(imsRole == null){
@@ -251,7 +256,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 			return imsRole;
 		}
 		
-		imsRole = service.getRoleByName(role);
+		imsRole = sharedService.getRoleByName(role);
 		
 		if(imsRole == null){
 			

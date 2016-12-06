@@ -667,4 +667,26 @@ public class ImsService {
 		
 		return getSingleResult(entityManager, criteriaQuery);
     }
+    
+
+	/**
+	 * @param dealerEmail
+	 * @return
+	 */
+	public AppUser getUserByEmailAndRefId(String email, Long referenceId) {
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<AppUser> criteriaQuery = criteriaBuilder.createQuery(AppUser.class);
+		Root<AppUser> root = criteriaQuery.from(AppUser.class);
+		
+		Predicate emailCondition = criteriaBuilder.equal(root.get(AppUser_.email), email);
+		Predicate referenceIdCondition = criteriaBuilder.equal(root.get(AppUser_.referencedId), referenceId);
+
+		criteriaQuery.select(root);
+		criteriaQuery.where(emailCondition, referenceIdCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
+	}
+    
 }

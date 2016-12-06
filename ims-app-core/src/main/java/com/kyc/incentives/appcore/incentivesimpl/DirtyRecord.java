@@ -32,7 +32,7 @@ public class DirtyRecord extends AbstractIncentiveCalculator {
 		
 		String email = user.getEmail();
 		
-		Long cleanRecordCount = CleanRecordService.getInstance().getCleanRecordCount(email, startDate, endDate, targetStatusTypes);
+		Long cleanRecordCount = CleanRecordService.getInstance().getCleanRecordDealerCount(email, startDate, endDate, targetStatusTypes);
 		
 		if(cleanRecordCount == null){
 			return 0;

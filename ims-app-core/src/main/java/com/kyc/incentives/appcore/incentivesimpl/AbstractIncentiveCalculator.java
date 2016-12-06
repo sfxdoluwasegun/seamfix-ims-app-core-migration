@@ -42,6 +42,8 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 	protected Collection<IncentiveUserTriggerHistory> calculateIncentives(Collection<IncentiveUserTriggerHistory> histories) {
 		Date triggerStartTime = new Date();
 		
+		localLog.info("histories size : "+histories.size());
+		
 		for (IncentiveUserTriggerHistory incentiveUserTriggerHistory : histories) {
 			
 			try {
@@ -62,6 +64,7 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.SUCCESS);
 				
 			} catch (Exception e) {
+				localLog.info("incentiveUserTriggerHistory : "+incentiveUserTriggerHistory);
 				incentiveUserTriggerHistory.setStatus(UserTriggerHistoryStatus.FAILED);
 				localLog.error(null, e);
 			}
@@ -76,15 +79,29 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 		
 		List<AppUser> users = context.getUsers();
 		
+		if(users == null || users.isEmpty()){
+			users = getTargetUsers();
+		}
+		
 		List<IncentiveUserTriggerHistory> histories = new ArrayList<>();
 		
 		for (AppUser appUser : users) {
+			log.info("processing user : "+appUser.getName()+", email : "+appUser.getEmail()+", id : "+appUser.getId());
 			addUserTriggerHistories(appUser, context, histories);
 		}
+		
+		log.info("users size : "+users.size()+", histories size : "+histories.size());
 		
 		return histories;
 	}
 	
+	/**
+	 * @return
+	 */
+	protected List<AppUser> getTargetUsers() {
+		return Collections.emptyList();
+	}
+
 	/**
 	 * @param appUser
 	 * @param context
@@ -97,6 +114,8 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 		for(Incentive incentive : incentives){
 			if(createHistory(incentive, appUser)){
 				addHistory(incentive, appUser, context, histories);
+			} else {
+				log.info("skipping for incentive : "+incentive+", and appUser : "+appUser);
 			}
 		}
 	}
@@ -107,7 +126,20 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 	 * @return
 	 */
 	protected boolean createHistory(Incentive incentive, AppUser appUser) {
-		return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
+		
+//		if(incentive.getTargetRoles() == null || appUser.getRoles() == null){
+//			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
+//			return false;
+//		}
+//		
+//		return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
+		
+		try {
+			return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
+		} catch (Exception e) {
+//			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
+			throw e;
+		}
 	}
 
 	/**

@@ -14,8 +14,11 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
+import com.kyc.incentives.ImsRole;
+import com.kyc.incentives.ImsRole_;
 import com.kyc.incentives.appcore.service.ImsService;
 import com.sf.biocapture.entity.BasicData;
+import com.sf.biocapture.entity.KycDealer;
 import com.sf.biocapture.entity.SmsActivationRequest;
 import com.sf.biocapture.entity.enums.StatusType;
 import com.sf.biocapture.entity.security.KMUser;
@@ -50,48 +53,31 @@ public class CleanRecordService extends ImsService{
 	}
 
 	/**
+	 * 
 	 * @param dealerEmail
 	 * @param startDate
 	 * @param endDate
+	 * @param targetStatusTypes
+	 * @return
 	 */
-	public Long getCleanRecordCount(String dealerEmail, Date startDate, Date endDate, List<StatusType> targetStatusTypes) {
-		
-		EntityManager entityManager = getKycEntityManager();
-		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-		
-		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
-		Root<ValidationResult> root = criteriaQuery.from(ValidationResult.class);
-		
-		criteriaQuery.select(criteriaBuilder.count(root.get("pk")));
-		
-		Predicate statusCondition;
-		
-		if(targetStatusTypes != null && !targetStatusTypes.isEmpty()){
-			statusCondition = root.get(ValidationResult_.approvalStatus).in(targetStatusTypes);
-		} else {
-			statusCondition = criteriaBuilder.isNull(root.get(ValidationResult_.approvalStatus));
-		}
-		Predicate basicDataCondition = root.get(ValidationResult_.recordId)
-				.in(getValidBasicDataIdsSubQuery(criteriaBuilder, criteriaQuery, dealerEmail, startDate, endDate));
-		
-		criteriaQuery.where(statusCondition, basicDataCondition);
-		
-		return getSingleResult(entityManager, criteriaQuery);
-		
+	public Long getCleanRecordDealerCount(String dealerEmail, Date startDate, Date endDate, List<StatusType> targetStatusTypes) {
+		return getCleanRecordCount(dealerEmail, startDate, endDate, targetStatusTypes, true);
 	}
 	
 	/**
 	 * 
-	 * This returns a subquery for the valid basic data ids for this dealer email and time range 
+	 * This returns a subquery for the valid basic data ids for this dealer/agent email and time range 
 	 * 
 	 * @param criteriaBuilder
 	 * @param query
-	 * @param dealerEmail
+	 * @param email
 	 * @param startDate
 	 * @param endDate
+	 * @param dealer
 	 * @return
 	 */
-	public Subquery<Long> getValidBasicDataIdsSubQuery(CriteriaBuilder criteriaBuilder, CriteriaQuery<?> query, String dealerEmail, Date startDate, Date endDate){
+	public Subquery<Long> getValidBasicDataIdsSubQuery(CriteriaBuilder criteriaBuilder, CriteriaQuery<?> query, String email, 
+			Date startDate, Date endDate, boolean dealer){
 		
 		Subquery<Long> basicDataSubQuery = query.subquery(Long.class);
 		Root<BasicData> root = basicDataSubQuery.from(BasicData.class);
@@ -111,13 +97,19 @@ public class CleanRecordService extends ImsService{
 		
 		subqueryKmuser.select(criteriaBuilder.lower(subRootKmuser.get("emailAddress")));
 		
-		String targetEmail = (dealerEmail != null) ? dealerEmail.toLowerCase() : "";
+		String targetEmail = (email != null) ? email.toLowerCase() : "";
 		
-		Predicate dealerEmailAddressesCondition = criteriaBuilder.equal(
-				criteriaBuilder.lower(subRootKmuser.get("assignedDealer").get("emailAddress")), 
-				targetEmail);
+		Predicate emailAddressesCondition;
 		
-		subqueryKmuser.where(dealerEmailAddressesCondition);
+		if(dealer){
+			emailAddressesCondition = criteriaBuilder.equal(
+					criteriaBuilder.lower(subRootKmuser.get("assignedDealer").get("emailAddress")), 
+					targetEmail);
+		} else {
+			emailAddressesCondition = criteriaBuilder.equal(criteriaBuilder.lower(subRootKmuser.get("emailAddress")), targetEmail);
+		}
+		
+		subqueryKmuser.where(emailAddressesCondition);
 		
 		
 		In<?> uniqueIdCondition = criteriaBuilder.in(root.get("userId").get("uniqueId")).value(subquerySar);
@@ -153,6 +145,153 @@ public class CleanRecordService extends ImsService{
 		criteriaQuery.where(emailCondition, uniqueIdCondition);
 		
 		return getResultList(entityManager, criteriaQuery);
+	}
+
+	/**
+	 * @param email
+	 * @return
+	 */
+	public KycDealer getKycDealerByAgentEmail(String agentEmail) {
+		EntityManager entityManager = getKycEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<KycDealer> criteriaQuery = criteriaBuilder.createQuery(KycDealer.class);
+		Root<KMUser> root = criteriaQuery.from(KMUser.class);
+		
+		if(agentEmail == null){
+			agentEmail = "";
+		}
+		
+		Predicate emailCondition = criteriaBuilder.equal(criteriaBuilder.lower(root.get("emailAddress")), agentEmail.toLowerCase());
+		
+		criteriaQuery.select(root.get("assignedDealer"));
+		criteriaQuery.where(emailCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
+	}
+
+	/**
+	 * @param email
+	 * @param startDate
+	 * @param endDate
+	 * @param targetStatusTypes
+	 * @return
+	 */
+	public Long getCleanRecordAgentCount(String email, Date startDate, Date endDate, List<StatusType> targetStatusTypes) {
+		return getCleanRecordCount(email, startDate, endDate, targetStatusTypes, false);
+	}
+
+	/**
+	 * @param email
+	 * @param startDate
+	 * @param endDate
+	 * @param targetStatusTypes
+	 * @return
+	 */
+	public Long getCleanRecordCount(String email, Date startDate, Date endDate, List<StatusType> targetStatusTypes, boolean dealer) {
+		EntityManager entityManager = getKycEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
+		Root<ValidationResult> root = criteriaQuery.from(ValidationResult.class);
+		
+		criteriaQuery.select(criteriaBuilder.count(root.get("pk")));
+		
+		Predicate statusCondition;
+		
+		if(targetStatusTypes != null && !targetStatusTypes.isEmpty()){
+			statusCondition = root.get(ValidationResult_.approvalStatus).in(targetStatusTypes);
+		} else {
+			statusCondition = criteriaBuilder.isNull(root.get(ValidationResult_.approvalStatus));
+		}
+		Predicate basicDataCondition = root.get(ValidationResult_.recordId)
+				.in(getValidBasicDataIdsSubQuery(criteriaBuilder, criteriaQuery, email, startDate, endDate, dealer));
+		
+		criteriaQuery.where(statusCondition, basicDataCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
+	}
+
+
+	
+	/**
+	 * @param dealerEmail
+	 * @return
+	 */
+	public List<KMUser> getAgents(String dealerEmail) {
+		
+		EntityManager entityManager = getKycEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<KMUser> criteriaQuery = criteriaBuilder.createQuery(KMUser.class);
+		Root<KMUser> root = criteriaQuery.from(KMUser.class);
+		
+		String targetEmail = (dealerEmail != null) ? dealerEmail.toLowerCase() : "";
+		
+		Predicate emailAddressesCondition = criteriaBuilder.equal(
+				criteriaBuilder.lower(root.get("assignedDealer").get("emailAddress")), 
+				targetEmail);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(emailAddressesCondition);
+		
+		return getResultList(entityManager, criteriaQuery); 
+	}
+
+	/**
+	 * @param role
+	 * @return
+	 */
+	public ImsRole getRoleByName(String name) {
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<ImsRole> criteriaQuery = criteriaBuilder.createQuery(ImsRole.class);
+		Root<ImsRole> root = criteriaQuery.from(ImsRole.class);
+		
+		Predicate nameCondition = criteriaBuilder.equal(root.get(ImsRole_.name), name);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(nameCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
+	}
+
+	/**
+	 * @return
+	 */
+	public List<KMUser> getAllKMUsers() {
+		
+		EntityManager entityManager = getKycEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<KMUser> criteriaQuery = criteriaBuilder.createQuery(KMUser.class);
+		Root<KMUser> root = criteriaQuery.from(KMUser.class);
+		
+		criteriaQuery.select(root);
+		
+		return getResultList(entityManager, criteriaQuery); 
+	}
+
+	/**
+	 * @param name
+	 * @param code
+	 * @return
+	 */
+	public ImsRole getRoleByNameAndCode(String name, String code) {
+		EntityManager entityManager = getEntityManager();
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		
+		CriteriaQuery<ImsRole> criteriaQuery = criteriaBuilder.createQuery(ImsRole.class);
+		Root<ImsRole> root = criteriaQuery.from(ImsRole.class);
+		
+		Predicate nameCondition = criteriaBuilder.equal(root.get(ImsRole_.name), name);
+		Predicate codeCondition = criteriaBuilder.equal(root.get(ImsRole_.code), code);
+		
+		criteriaQuery.select(root);
+		criteriaQuery.where(nameCondition, codeCondition);
+		
+		return getSingleResult(entityManager, criteriaQuery);
 	}
 	
 }

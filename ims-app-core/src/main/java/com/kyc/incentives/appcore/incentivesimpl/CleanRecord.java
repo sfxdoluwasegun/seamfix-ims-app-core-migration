@@ -206,6 +206,13 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 			return user;
 		}
 		
+		Set<AppUser> upLineUsers = null;
+		
+		if(upLineUser != null){
+			upLineUsers = new HashSet<>();
+			upLineUsers.add(upLineUser);
+		}
+		
 		user = new AppUser();
 		
 		user.setBottom(true);
@@ -216,6 +223,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 		user.setOrbitaId(agent.getOrbitaId());
 		user.setReferencedId(agent.getPk());
 		user.setRoles(getRoles(agent.getRoles())); 
+		user.setUpLineUsers(upLineUsers);
 		user.setTopMostUpLineUser(upLineUser);
 		
 		service.create(user);

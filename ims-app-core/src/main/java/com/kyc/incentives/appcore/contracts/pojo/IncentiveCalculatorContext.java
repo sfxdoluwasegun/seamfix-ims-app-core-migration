@@ -5,6 +5,7 @@ package com.kyc.incentives.appcore.contracts.pojo;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.kyc.incentives.AppUser;
 import com.kyc.incentives.Incentive;
@@ -23,7 +24,7 @@ import lombok.ToString;
 @ToString
 public class IncentiveCalculatorContext {
 
-	private List<AppUser> users;
+	private Set<AppUser> users;
 	private IncentiveTriggerHistory incentiveTriggerHistory;
 	private AppUser triggerAgent;
 	private List<Incentive> incentives;

@@ -77,7 +77,7 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 
 	protected List<IncentiveUserTriggerHistory> getTriggerHistories(IncentiveCalculatorContext context){
 		
-		List<AppUser> users = context.getUsers();
+		Set<AppUser> users = context.getUsers();
 		
 		if(users == null || users.isEmpty()){
 			users = getTargetUsers();
@@ -98,8 +98,8 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 	/**
 	 * @return
 	 */
-	protected List<AppUser> getTargetUsers() {
-		return Collections.emptyList();
+	protected Set<AppUser> getTargetUsers() {
+		return Collections.emptySet();
 	}
 
 	/**
@@ -127,17 +127,15 @@ public abstract class AbstractIncentiveCalculator implements IncentiveCalculator
 	 */
 	protected boolean createHistory(Incentive incentive, AppUser appUser) {
 		
-//		if(incentive.getTargetRoles() == null || appUser.getRoles() == null){
-//			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
-//			return false;
-//		}
-//		
-//		return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
+		if(incentive.getTargetRoles() == null || appUser.getRoles() == null){
+			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
+			return false;
+		}
 		
 		try {
 			return !Collections.disjoint(incentive.getTargetRoles(), appUser.getRoles());
 		} catch (Exception e) {
-//			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
+			log.info("incentive : "+incentive+", user : "+appUser.getRoles());
 			throw e;
 		}
 	}

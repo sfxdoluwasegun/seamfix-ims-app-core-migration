@@ -4,7 +4,6 @@
 package com.kyc.incentives.appcore.incentivesimpl;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -363,7 +362,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 	}
 
 	@Override
-	protected List<AppUser> getTargetUsers() {
+	protected Set<AppUser> getTargetUsers() {
 		
 		List<KMUser> allKMusers = service.getAllKMUsers();
 		
@@ -371,7 +370,7 @@ public class CleanRecord extends AbstractIncentiveCalculator {
 			return super.getTargetUsers();
 		}
 		
-		List<AppUser> users = new ArrayList<>();
+		Set<AppUser> users = new HashSet<>();
 		
 		
 		for(KMUser user : allKMusers){

@@ -3,7 +3,6 @@
  */
 package com.kyc.incentives.appcore.incentivesimpl;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,14 +53,14 @@ public class ActiveDevices extends AbstractIncentiveCalculator {
 	}
 
 	@Override
-	protected List<AppUser> getTargetUsers() {
+	protected Set<AppUser> getTargetUsers() {
 		List<KycDealer> allTargetDealers = sharedService.getAllNodeAssignmentDealers();
 		
 		if(allTargetDealers == null){
-			return Collections.emptyList();
+			return Collections.emptySet();
 		}
 		
-		List<AppUser> users = new ArrayList<>();
+		Set<AppUser> users = new HashSet<>();
 		
 		for (KycDealer kycDealer : allTargetDealers) {
 			AppUser user = getAppUserByKycDealer(kycDealer);
